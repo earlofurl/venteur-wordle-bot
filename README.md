@@ -1,5 +1,7 @@
 # Wordle Bot Technical Take Home
 
+Hosted at: https://venteur123.z22.web.core.windows.net/
+
 Congrats on making it to our technical evaluation!  To help us understand your capabilities and familiarity with the front-end technologies we use, we've put together a fun little project for you - a Wordle Bot.
 
 Your task is to create a user interface for our Wordle solver API that gives the user recommendations for each guess in solving a Wordle.  If you you aren't familiar with Wordle, you can play a game here: [https://nytimes.com/games/wordle/index.html]([Wordle](https://nytimes.com/games/wordle/index.html)).
