@@ -1,41 +1,77 @@
-name: Blob storage website CI
+name: 🚀 Deploy
 
 on:
     push:
-        branches: [ main ]
+        branches:
+            - main
+    pull_request: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  actions: write
+  contents: read
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
+  lint:
+      name: ⬣ ESLint
+      runs-on: ubuntu-latest
+      steps:
+        - name: ⬇️ Checkout repo
+          uses: actions/checkout@v3
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: 18
+        - name: ⎔ Setup node
+          uses: actions/setup-node@v3
+          with:
+            node-version: 18
 
-    - run: npm ci
-    - run: npm run build
+        - name: 📥 Download deps
+          uses: bahmutov/npm-install@v1
 
-    - uses: azure/login@v1
-      with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+        - name: 🔬 Lint
+          run: npm run lint
 
-    - name: Upload to blob storage
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
-            az storage blob upload-batch --account-name "venteur123" --auth-mode key -d '$web' -s build
+  deploy:
+      name: 🚀 Deploy
+      runs-on: ubuntu-latest
+      needs: [lint]
+      # only build/deploy main branch on pushes
+      if:
+        ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev') &&
+        github.event_name == 'push' }}
 
-    - name: Purge CDN endpoint
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
-           az cdn endpoint purge --content-paths  "/*" --profile-name  "venteur123" --name  "venteur123.azureedge.net" --resource-group  "Personal"
+      steps:
+        - name: ⬇️ Checkout repo
+          uses: actions/checkout@v3
 
-  # Azure logout
-    - name: logout
-      run: |
-            az logout
-      if: always()
+        - name: Use Node.js ${{ matrix.node-version }}
+          uses: actions/setup-node@v2
+          with:
+            node-version: 18
+
+        - run: npm ci
+        - run: npm run build
+
+        - uses: azure/login@v1
+          with:
+              creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+        - name: Upload to blob storage
+          uses: azure/CLI@v1
+          with:
+            inlineScript: |
+                az storage blob upload-batch --account-name "venteur123" --auth-mode key -d '$web' -s build
+
+        - name: Purge CDN endpoint
+          uses: azure/CLI@v1
+          with:
+            inlineScript: |
+               az cdn endpoint purge --content-paths  "/*" --profile-name  "venteur123" --name  "venteur123.azureedge.net" --resource-group  "Personal"
+
+      # Azure logout
+        - name: logout
+          run: |
+                az logout
+          if: always()
