@@ -13,6 +13,7 @@ function App() {
     const [history, setHistory] = useState<WordleRequestItem[]>([]);
     const [userClueInput, setUserClueInput] = useState<string>("");
 
+    // Function to cycle through the clue colors.
     const handleGuessInputChange = (idx: number) => {
         const cluesArr = userClueInput.split("");
         const currentClue = cluesArr[idx];
@@ -27,6 +28,7 @@ function App() {
         setUserClueInput(cluesArr.join(""));
     };
 
+    // Initial fetch of the first word
     useEffect(() => {
         fetchWordleResult([])
             .then((response: WordleResponse) => {
@@ -63,9 +65,9 @@ function App() {
             } else {
                 setCurrentGuess(response.guess);
                 setHistory([...history, requestItem]);
+                // A new word is fetched, so we reset the color inputs
                 // TODO: Set the userClueInput to the previous guess's clue
                 setUserClueInput("xxxxx");
-                // A new word is fetched, so we reset the color inputs
             }
         } catch (unknownError) {
             if (unknownError instanceof Error) {
@@ -89,7 +91,6 @@ function App() {
                     </Box>
                 )}
 
-                {/* Current Guess */}
                 {!initialLoading && (
                     <form onSubmit={handleSubmit}>
                         {/* Current Guess Display */}
