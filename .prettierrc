@@ -1,0 +1,15 @@
+{
+  "arrowParens": "always",
+  "semi": true,
+  "tabWidth": 4,
+  "proseWrap": "always",
+  "printWidth": 100,
+  "overrides": [
+    {
+      "files": "*.yml",
+      "options": {
+        "tabWidth": 2
+      }
+    }
+  ]
+}
