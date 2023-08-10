@@ -1,40 +1,38 @@
 import React, { useEffect, useState } from "react";
-import { Container, CircularProgress, Box, Button, Typography, Grid, Paper } from "@mui/material";
 import Layout from "./components/Layout";
 import Header from "./components/Header";
+import { Box, Button, CircularProgress, Container, Typography } from "@mui/material";
 import { fetchWordleResult, type WordleRequestItem, type WordleResponse } from "./api/api";
-
-const getCellColor = (char: string) => {
-    switch (char.toLowerCase()) {
-        case "g":
-            return "green";
-        case "y":
-            return "yellow";
-        default:
-            return "white";
-    }
-};
+import { WordGrid } from "./components/WordGrid";
 
 function App() {
     const [initialLoading, setInitialLoading] = useState(true);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [currentWord, setCurrentWord] = useState("");
+    const [currentGuess, setCurrentGuess] = useState("");
     const [history, setHistory] = useState<WordleRequestItem[]>([]);
-    const [userInputColors, setUserInputColors] = useState<
-        { letter: string; color: "green" | "yellow" | "white" }[]
-    >([]);
+    const [userClueInput, setUserClueInput] = useState<string>("");
+
+    const handleGuessInputChange = (idx: number) => {
+        const cluesArr = userClueInput.split("");
+        const currentClue = cluesArr[idx];
+
+        const clueKeys = {
+            x: "y",
+            y: "g",
+            g: "x",
+        };
+        cluesArr[idx] = clueKeys[currentClue as keyof typeof clueKeys];
+
+        setUserClueInput(cluesArr.join(""));
+    };
 
     useEffect(() => {
         fetchWordleResult([])
             .then((response: WordleResponse) => {
-                setCurrentWord(response.guess);
-
-                setUserInputColors(
-                    response.guess.split("").map((letter) => ({ letter, color: "white" })),
-                );
-
+                setCurrentGuess(response.guess);
                 setInitialLoading(false);
+                setUserClueInput("xxxxx");
                 setLoading(false);
             })
             .catch((unknownError) => {
@@ -51,36 +49,22 @@ function App() {
         event.preventDefault();
 
         setLoading(true);
-        let clues = userInputColors
-            .map((item) => {
-                switch (item.color) {
-                    case "green":
-                        return "g";
-                    case "yellow":
-                        return "y";
-                    case "white":
-                    default:
-                        return "x";
-                }
-            })
-            .join("");
 
         try {
             const requestItem: WordleRequestItem = {
-                word: currentWord,
-                clue: clues,
+                word: currentGuess,
+                clue: userClueInput,
             };
 
             const response = await fetchWordleResult([...history, requestItem]);
 
-            if (clues === "ggggg") {
+            if (userClueInput === "ggggg") {
                 alert("You've won the game!");
             } else {
-                setCurrentWord(response.guess);
+                setCurrentGuess(response.guess);
                 setHistory([...history, requestItem]);
-                setUserInputColors(
-                    response.guess.split("").map((letter) => ({ letter, color: "white" })),
-                );
+                // TODO: Set the userClueInput to the previous guess's clue
+                setUserClueInput("xxxxx");
                 // A new word is fetched, so we reset the color inputs
             }
         } catch (unknownError) {
@@ -98,125 +82,71 @@ function App() {
             <Container maxWidth="sm">
                 <Header />
 
+                {/* Initial loading state indicator */}
                 {initialLoading && (
-                    <Box
-                        sx={{
-                            display: "flex",
-                            py: 4,
-                            justifyContent: "center",
-                            alignItems: "center",
-                        }}
-                    >
+                    <Box display="flex" py={4} justifyContent="center" alignItems="center">
                         <CircularProgress />
                     </Box>
                 )}
 
+                {/* Current Guess */}
                 {!initialLoading && (
                     <form onSubmit={handleSubmit}>
-                        {currentWord && (
+                        {/* Current Guess Display */}
+                        {currentGuess && (
                             <Box sx={{ mb: 4 }}>
                                 <Typography variant="h5" component="div" pb={2}>
-                                    Wordle Bot recommends:
+                                    Wordle Bot recommends your next guess is:
                                 </Typography>
-                                <Grid container spacing={1}>
-                                    {currentWord.split("").map((letter, idx) => (
-                                        <Grid item xs key={idx}>
-                                            <Paper
-                                                style={{
-                                                    backgroundColor: getCellColor(
-                                                        history.length > 0
-                                                            ? history[
-                                                                  history.length - 1
-                                                              ].clue.charAt(idx)
-                                                            : "x",
-                                                    ),
-                                                    minHeight: 80,
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                }}
-                                            >
-                                                <Typography variant="h2">
-                                                    {letter.toUpperCase()}
-                                                </Typography>
-                                            </Paper>
-                                        </Grid>
-                                    ))}
-                                </Grid>
+                                <WordGrid
+                                    word={currentGuess}
+                                    clues={
+                                        history.length > 0 ? history[history.length - 1].clue : ""
+                                    }
+                                />
                             </Box>
                         )}
 
-                        {history.map((item, index) => (
-                            <Grid container key={index} spacing={1}>
-                                {item.word.split("").map((letter, idx) => (
-                                    <Grid item xs key={idx} mb={2}>
-                                        <Paper
-                                            style={{
-                                                backgroundColor: getCellColor(
-                                                    item.clue.charAt(idx),
-                                                ),
-                                                minHeight: 80,
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                            }}
-                                        >
-                                            <Typography variant="h2">
-                                                {letter.toUpperCase()}
-                                            </Typography>
-                                        </Paper>
-                                    </Grid>
-                                ))}
-                            </Grid>
-                        ))}
+                        {/* History */}
+                        <Container sx={{ pb: 2 }}>
+                            {history.map((item, idx) => (
+                                <Box
+                                    mt={2}
+                                    p={2}
+                                    border={1}
+                                    borderRadius="borderRadius"
+                                    borderColor="grey.500"
+                                    key={`${item.word}-${idx}`}
+                                >
+                                    <Typography variant="h6" component="div" pb={2}>
+                                        Guess {idx + 1}
+                                    </Typography>
+                                    <WordGrid
+                                        key={`${item.word}-${idx}`}
+                                        word={item.word}
+                                        clues={item.clue}
+                                    />
+                                </Box>
+                            ))}
+                        </Container>
 
-                        {currentWord && (
+                        {/* Guess Input */}
+                        {currentGuess && (
                             <Box sx={{ mb: 4 }}>
                                 <Typography variant="h5" component="div" pb={2}>
-                                    Click each letter to select the color of the result clue:
+                                    Click each letter to select clue colors:
                                 </Typography>
-                                <Grid container spacing={1}>
-                                    {currentWord.split("").map((letter, index) => (
-                                        <Grid item xs key={index}>
-                                            <Paper
-                                                style={{
-                                                    backgroundColor:
-                                                        userInputColors[index]?.color || "white",
-                                                    minHeight: 80,
-                                                    display: "flex",
-                                                    justifyContent: "center",
-                                                    alignItems: "center",
-                                                }}
-                                                onClick={() => {
-                                                    let color =
-                                                        userInputColors[index]?.color || "white";
-                                                    switch (color) {
-                                                        case "white":
-                                                            color = "green";
-                                                            break;
-                                                        case "green":
-                                                            color = "yellow";
-                                                            break;
-                                                        case "yellow":
-                                                            color = "white";
-                                                            break;
-                                                    }
-                                                    let guessResult = [...userInputColors];
-                                                    guessResult[index] = { letter, color };
-                                                    setUserInputColors(guessResult);
-                                                }}
-                                            >
-                                                <Typography variant="h2">
-                                                    {letter.toUpperCase()}
-                                                </Typography>
-                                            </Paper>
-                                        </Grid>
-                                    ))}
-                                </Grid>
+                                <WordGrid
+                                    word={currentGuess}
+                                    clues={userClueInput}
+                                    clickHandler={handleGuessInputChange}
+                                />
                             </Box>
                         )}
 
+                        {/* Submit Button */}
                         <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
+                            {loading && <CircularProgress />}
                             <Button variant="contained" type="submit" disabled={loading}>
                                 Submit Clues
                             </Button>
@@ -224,7 +154,8 @@ function App() {
                     </form>
                 )}
 
-                <Box sx={{ mt: 2 }}>
+                {/* Error Display */}
+                <Box mt={2}>
                     <Typography variant="body1" color="red">
                         {error}
                     </Typography>

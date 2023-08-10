@@ -25,7 +25,7 @@ export const fetchWordleResult = async (request: WordleRequest): Promise<WordleR
         body: bodyValue,
     };
     try {
-        var response = await fetch(API_PATH, options);
+        let response = await fetch(API_PATH, options);
         if (response.status >= 200 && response.status < 300) {
             const output = await response.json();
             if (isWordleResponse(output)) {
