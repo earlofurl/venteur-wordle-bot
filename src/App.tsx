@@ -20,7 +20,6 @@ function App() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [currentWord, setCurrentWord] = useState("");
-    const [userInput, setUserInput] = useState("");
     const [history, setHistory] = useState<WordleRequestItem[]>([]);
     const [userInputColors, setUserInputColors] = useState<
         { letter: string; color: "green" | "yellow" | "white" }[]
@@ -78,7 +77,6 @@ function App() {
                 alert("You've won the game!");
             } else {
                 setCurrentWord(response.guess);
-                setUserInput("");
                 setHistory([...history, requestItem]);
                 setUserInputColors(
                     response.guess.split("").map((letter) => ({ letter, color: "white" })),
@@ -151,7 +149,7 @@ function App() {
                         {history.map((item, index) => (
                             <Grid container key={index} spacing={1}>
                                 {item.word.split("").map((letter, idx) => (
-                                    <Grid item xs key={idx}>
+                                    <Grid item xs key={idx} mb={2}>
                                         <Paper
                                             style={{
                                                 backgroundColor: getCellColor(
