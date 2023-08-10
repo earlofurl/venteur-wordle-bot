@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from "react";
 import Layout from "./components/Layout";
 import Header from "./components/Header";
-import { Box, Button, CircularProgress, Container, Typography } from "@mui/material";
+import {
+    Alert,
+    AlertTitle,
+    Box,
+    Button,
+    CircularProgress,
+    Container,
+    Typography,
+} from "@mui/material";
 import { fetchWordleResult, type WordleRequestItem, type WordleResponse } from "./api/api";
 import { WordGrid } from "./components/WordGrid";
 
@@ -12,6 +20,8 @@ function App() {
     const [currentGuess, setCurrentGuess] = useState("");
     const [history, setHistory] = useState<WordleRequestItem[]>([]);
     const [userClueInput, setUserClueInput] = useState<string>("");
+    const [showWinAlert, setShowWinAlert] = useState<boolean>(false);
+    const [showLoseAlert, setShowLoseAlert] = useState<boolean>(false);
 
     // Function to cycle through the clue colors.
     const handleGuessInputChange = (idx: number) => {
@@ -61,7 +71,9 @@ function App() {
             const response = await fetchWordleResult([...history, requestItem]);
 
             if (userClueInput === "ggggg") {
-                alert("You've won the game!");
+                setShowWinAlert(true);
+            } else if (history.length === 5) {
+                setShowLoseAlert(true);
             } else {
                 setCurrentGuess(response.guess);
                 setHistory([...history, requestItem]);
@@ -79,10 +91,66 @@ function App() {
         }
     };
 
+    const resetGameState = () => {
+        setUserClueInput("xxxxx");
+        setLoading(false);
+        setCurrentGuess("");
+        setHistory([]);
+        setInitialLoading(true);
+        setError(""); // Optional: Clear the error state as well.
+
+        // Fetch a new initial word again.
+        fetchWordleResult([])
+            .then((response: WordleResponse) => {
+                setCurrentGuess(response.guess);
+                setUserClueInput("xxxxx");
+                setInitialLoading(false);
+                setLoading(false);
+            })
+            .catch((unknownError) => {
+                if (unknownError instanceof Error) {
+                    setError(`Failed to fetch initial word. ${unknownError.message}`);
+                    console.error(unknownError);
+                    setInitialLoading(false);
+                    setLoading(false);
+                }
+            });
+    };
+
     return (
         <Layout>
             <Container maxWidth="sm">
                 <Header />
+
+                {/* Win Alert */}
+                {showWinAlert && (
+                    <Alert
+                        severity="success"
+                        sx={{ mb: 2 }}
+                        onClose={() => {
+                            setShowWinAlert(false);
+                            resetGameState();
+                        }}
+                    >
+                        <AlertTitle>Congratulations!</AlertTitle>
+                        You win!
+                    </Alert>
+                )}
+
+                {/* Lose Alert */}
+                {showLoseAlert && (
+                    <Alert
+                        severity="error"
+                        sx={{ mb: 2 }}
+                        onClose={() => {
+                            setShowLoseAlert(false);
+                            resetGameState();
+                        }}
+                    >
+                        <AlertTitle>Sorry!</AlertTitle>
+                        Out of guesses.
+                    </Alert>
+                )}
 
                 {/* Initial loading state indicator */}
                 {initialLoading && (
