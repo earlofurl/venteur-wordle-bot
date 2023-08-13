@@ -72,7 +72,7 @@ function App() {
 
             if (userClueInput === "ggggg") {
                 setShowWinAlert(true);
-            } else if (history.length === 5) {
+            } else if (history.length >= 5 && userClueInput !== "ggggg") {
                 setShowLoseAlert(true);
             } else {
                 setCurrentGuess(response.guess);
@@ -97,7 +97,7 @@ function App() {
         setCurrentGuess("");
         setHistory([]);
         setInitialLoading(true);
-        setError(""); // Optional: Clear the error state as well.
+        setError("");
 
         // Fetch a new initial word again.
         fetchWordleResult([])
@@ -121,36 +121,6 @@ function App() {
         <Layout>
             <Container maxWidth="sm">
                 <Header />
-
-                {/* Win Alert */}
-                {showWinAlert && (
-                    <Alert
-                        severity="success"
-                        sx={{ mb: 2 }}
-                        onClose={() => {
-                            setShowWinAlert(false);
-                            resetGameState();
-                        }}
-                    >
-                        <AlertTitle>Congratulations!</AlertTitle>
-                        You win!
-                    </Alert>
-                )}
-
-                {/* Lose Alert */}
-                {showLoseAlert && (
-                    <Alert
-                        severity="error"
-                        sx={{ mb: 2 }}
-                        onClose={() => {
-                            setShowLoseAlert(false);
-                            resetGameState();
-                        }}
-                    >
-                        <AlertTitle>Sorry!</AlertTitle>
-                        Out of guesses.
-                    </Alert>
-                )}
 
                 {/* Initial loading state indicator */}
                 {initialLoading && (
@@ -213,10 +183,44 @@ function App() {
                             </Box>
                         )}
 
+                        {/* Win Alert */}
+                        {showWinAlert && (
+                            <Alert
+                                severity="success"
+                                sx={{ mb: 2 }}
+                                onClose={() => {
+                                    setShowWinAlert(false);
+                                    resetGameState();
+                                }}
+                            >
+                                <AlertTitle>Congratulations!</AlertTitle>
+                                You win!
+                            </Alert>
+                        )}
+
+                        {/* Lose Alert */}
+                        {showLoseAlert && (
+                            <Alert
+                                severity="error"
+                                sx={{ mb: 2 }}
+                                onClose={() => {
+                                    setShowLoseAlert(false);
+                                    resetGameState();
+                                }}
+                            >
+                                <AlertTitle>Sorry!</AlertTitle>
+                                Out of guesses.
+                            </Alert>
+                        )}
+
                         {/* Submit Button */}
                         <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
                             {loading && <CircularProgress />}
-                            <Button variant="contained" type="submit" disabled={loading}>
+                            <Button
+                                variant="contained"
+                                type="submit"
+                                disabled={loading || showWinAlert || showLoseAlert}
+                            >
                                 Submit Clues
                             </Button>
                         </Box>
